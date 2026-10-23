@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "sentinel-workbench-144-ryan-vo",
+  "owner": "A220man",
+  "email": "ryandtvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "summary": "Work in progress: sentinel-workbench-144-ryan-vo",
+  "workflows": [
+    "Create and organize agent sessions into spaces, with tiling panes across 9 workspaces per session",
+    "Track agent state transitions (working \u2192 done/needs_input/errored) in a unified Inbox with human-nonce dismissal",
+    "Enable privacy mode to mask secrets, emails, IPs, and custom patterns in rendered output during screen sharing"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "status": "work-in-progress"
+}
