@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "current_feature": "core-skeleton",
+  "features": [
+    {
+      "id": "core-skeleton",
+      "title": "FastAPI + React skeleton with SQLite persistence",
+      "status": "done",
+      "acceptance": [
+        "FastAPI app runs at /api/health",
+        "React app builds and serves",
+        "SQLite database with models",
+        "Docker compose with backend/frontend/Keycloak",
+        "Basic pytest and vitest passing"
+      ],
+      "implementation": [
+        "backend/app/main.py",
+        "backend/app/core/config.py",
+        "backend/app/core/database.py",
+        "backend/app/models/session.py",
+        "backend/app/models/user.py",
+        "backend/app/api/routes/health.py",
+        "backend/app/api/routes/sessions.py",
+        "backend/app/api/routes/windows.py",
+        "backend/app/api/routes/attention.py",
+        "backend/app/api/routes/auth.py",
+        "backend/app/api/deps.py",
+        "backend/app/services/agent.py",
+        "backend/app/services/privacy.py",
+        "frontend/src/main.tsx",
+        "frontend/src/App.tsx",
+        "frontend/src/components/Layout.tsx",
+        "frontend/src/components/Dashboard.tsx",
+        "frontend/src/components/Sessions.tsx",
+        "frontend/src/components/SessionDetail.tsx",
+        "frontend/src/components/Inbox.tsx",
+        "frontend/src/components/Settings.tsx",
+        "frontend/src/components/Login.tsx",
+        "frontend/src/components/ProtectedRoute.tsx",
+        "frontend/src/hooks/useAuthStore.ts",
+        "frontend/src/api/client.ts",
+        "frontend/src/types/api.ts"
+      ],
+      "tests": [
+        "backend/tests/conftest.py",
+        "backend/tests/test_models.py",
+        "backend/tests/test_api.py",
+        "frontend/src/test/setup.ts",
+        "frontend/src/components/Login.test.tsx",
+        "frontend/src/components/Dashboard.test.tsx",
+        "frontend/src/components/Sessions.test.tsx"
+      ]
+    },
+    {
+      "id": "auth-oidc",
+      "title": "OIDC authentication with Keycloak",
+      "status": "planned",
+      "acceptance": [
+        "Login/logout flow works",
+        "Protected API endpoints",
+        "Roles: viewer, operator, admin"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "agent-sessions",
+      "title": "Agent session management (CRUD + Inbox)",
+      "status": "planned",
+      "acceptance": [
+        "Create/list/get/update/delete agent sessions",
+        "Inbox with attention items",
+        "Agent state tracking"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "privacy-mode",
+      "title": "Privacy mode for masking sensitive text",
+      "status": "planned",
+      "acceptance": [
+        "Toggle masks secrets in UI",
+        "Configurable regex rules",
+        "Dock indicator shows privacy status"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "spaces",
+      "title": "Spaces for grouping sessions",
+      "status": "planned",
+      "acceptance": [
+        "Sessions have space label",
+        "Move pane between sessions",
+        "Sidebar groups by space"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "quiet-mode",
+      "title": "Quiet mode per pane (no Inbox items)",
+      "status": "planned",
+      "acceptance": [
+        "Per-pane quiet flag",
+        "Suppresses finished/question/errored items",
+        "CLI verb for runtime toggle"
+      ],
+      "implementation": [],
+      "tests": []
+    }
+  ]
+}
