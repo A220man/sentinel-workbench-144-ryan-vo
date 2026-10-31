@@ -25,8 +25,7 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite+aiosqlite:///./sentinel.db"
     
-    # Security
-    secret_key: str = Field(default="change-me-in-production", min_length=32)
+    secret_key: str = Field(default="change-me-in-production-minimum-32-characters-long", min_length=32)
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     

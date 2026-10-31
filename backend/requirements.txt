@@ -18,3 +18,4 @@ PyYAML==6.0.2
 tomli==2.0.1
 tomli-w==1.0.0
 structlog==25.1.0
+itsdangerous==2.2.0
