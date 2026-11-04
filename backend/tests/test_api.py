@@ -2,6 +2,7 @@
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User, Role
 from app.models.session import Session, Window, AgentState, AttentionItem, AttentionKind
@@ -221,26 +222,21 @@ class TestAttentionEndpoints:
         assert data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_attention_summary(self, client: AsyncClient, test_user: User, test_window: Window):
+    async def test_attention_summary(self, client: AsyncClient, test_user: User, test_window: Window, db_session: AsyncSession):
         login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
         token = login_resp.json()["access_token"]
         
         # Create attention item
-        from app.core.database import get_db
         from app.models.session import AttentionItem, AttentionKind
-        from app.api.deps import get_current_user
         
-        # Use db_session fixture
-        from app.core.database import async_session_maker
-        async with async_session_maker() as db:
-            item = AttentionItem(
-                window_id=test_window.id,
-                kind=AttentionKind.FINISHED,
-                title="Task done",
-                human_nonce="test-nonce-123",
-            )
-            db.add(item)
-            await db.commit()
+        item = AttentionItem(
+            window_id=test_window.id,
+            kind=AttentionKind.FINISHED,
+            title="Task done",
+            human_nonce="test-nonce-123",
+        )
+        db_session.add(item)
+        await db_session.commit()
         
         response = await client.get("/api/attention/stats/summary", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
@@ -249,24 +245,23 @@ class TestAttentionEndpoints:
         assert "finished" in data["by_kind"]
 
     @pytest.mark.asyncio
-    async def test_dismiss_attention(self, client: AsyncClient, test_user: User, test_window: Window):
+    async def test_dismiss_attention(self, client: AsyncClient, test_user: User, test_window: Window, db_session: AsyncSession):
         login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
         token = login_resp.json()["access_token"]
         
         # Create attention item with nonce
-        from app.core.database import async_session_maker
         from app.models.session import AttentionItem, AttentionKind
-        async with async_session_maker() as db:
-            item = AttentionItem(
-                window_id=test_window.id,
-                kind=AttentionKind.FINISHED,
-                title="Task done",
-                human_nonce="test-nonce-123",
-            )
-            db.add(item)
-            await db.commit()
-            await db.refresh(item)
-            item_id = item.id
+        
+        item = AttentionItem(
+            window_id=test_window.id,
+            kind=AttentionKind.FINISHED,
+            title="Task done",
+            human_nonce="test-nonce-123",
+        )
+        db_session.add(item)
+        await db_session.commit()
+        await db_session.refresh(item)
+        item_id = item.id
         
         response = await client.post(
             f"/api/attention/{item_id}/dismiss",
@@ -278,23 +273,22 @@ class TestAttentionEndpoints:
         assert data["dismissed_at"] is not None
 
     @pytest.mark.asyncio
-    async def test_dismiss_wrong_nonce(self, client: AsyncClient, test_user: User, test_window: Window):
+    async def test_dismiss_wrong_nonce(self, client: AsyncClient, test_user: User, test_window: Window, db_session: AsyncSession):
         login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
         token = login_resp.json()["access_token"]
         
-        from app.core.database import async_session_maker
         from app.models.session import AttentionItem, AttentionKind
-        async with async_session_maker() as db:
-            item = AttentionItem(
-                window_id=test_window.id,
-                kind=AttentionKind.FINISHED,
-                title="Task done",
-                human_nonce="correct-nonce",
-            )
-            db.add(item)
-            await db.commit()
-            await db.refresh(item)
-            item_id = item.id
+        
+        item = AttentionItem(
+            window_id=test_window.id,
+            kind=AttentionKind.FINISHED,
+            title="Task done",
+            human_nonce="correct-nonce",
+        )
+        db_session.add(item)
+        await db_session.commit()
+        await db_session.refresh(item)
+        item_id = item.id
         
         response = await client.post(
             f"/api/attention/{item_id}/dismiss",
