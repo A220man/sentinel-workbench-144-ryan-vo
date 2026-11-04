@@ -42,10 +42,23 @@ async def db_session() -> AsyncSession:
 @pytest_asyncio.fixture(scope="function")
 async def client(db_session: AsyncSession) -> AsyncClient:
     """Create a test client with overridden database dependency."""
+    import os
+    from contextlib import asynccontextmanager
+    from fastapi import FastAPI
+    from app.core.config import clear_settings_cache
+    
+    os.environ["OIDC_ENABLED"] = "false"
+    clear_settings_cache()
+    
     async def override_get_db():
         yield db_session
     
-    app = create_app()
+    @asynccontextmanager
+    async def test_lifespan(app: FastAPI):
+        yield
+    
+    from app.main import create_app
+    app = create_app(test_lifespan)
     app.dependency_overrides[get_db] = override_get_db
     
     transport = ASGITransport(app=app)

@@ -4,19 +4,16 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
+from typing import Optional
 from jose import jwt, JWTError
 from datetime import datetime, timezone, timedelta
 import secrets
-
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.user import User, Role
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_user_from_token, verify_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-security = HTTPBearer(auto_error=False)
-
-settings = get_settings()
 
 
 class TokenResponse(BaseModel):
@@ -44,7 +41,8 @@ class LoginRequest(BaseModel):
 
 def create_access_token(user: User) -> str:
     """Create JWT access token."""
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    s = get_settings()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=s.access_token_expire_minutes)
     payload = {
         "sub": str(user.id),
         "email": user.email,
@@ -52,32 +50,7 @@ def create_access_token(user: User) -> str:
         "exp": expire,
         "iat": datetime.now(timezone.utc),
     }
-    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
-
-
-def verify_token(token: str) -> dict:
-    """Verify and decode JWT token."""
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        return payload
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-
-async def get_user_from_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: AsyncSession = Depends(get_db),
-) -> User:
-    """Get current user from JWT token."""
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    payload = verify_token(credentials.credentials)
-    user_id = int(payload.get("sub", 0))
-    user = await db.get(User, user_id)
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User not found or inactive")
-    return user
+    return jwt.encode(payload, s.secret_key, algorithm=s.algorithm)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -87,7 +60,8 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     """Demo login endpoint (only works when OIDC disabled)."""
-    if settings.oidc_enabled:
+    s = get_settings()
+    if s.oidc_enabled:
         raise HTTPException(status_code=400, detail="OIDC enabled - use /auth/oidc/login")
     
     # Demo mode: find or create user
@@ -113,12 +87,12 @@ async def login(
         httponly=True,
         secure=False,  # True in production with HTTPS
         samesite="lax",
-        max_age=settings.access_token_expire_minutes * 60,
+        max_age=s.access_token_expire_minutes * 60,
     )
     
     return TokenResponse(
         access_token=token,
-        expires_in=settings.access_token_expire_minutes * 60,
+        expires_in=s.access_token_expire_minutes * 60,
     )
 
 
@@ -147,7 +121,8 @@ async def get_current_user_info(
 @router.get("/oidc/login")
 async def oidc_login(request: Request) -> dict:
     """Initiate OIDC login flow."""
-    if not settings.oidc_enabled:
+    s = get_settings()
+    if not s.oidc_enabled:
         raise HTTPException(status_code=400, detail="OIDC not enabled")
     
     # Generate state and nonce for PKCE
@@ -160,11 +135,11 @@ async def oidc_login(request: Request) -> dict:
     
     # Build authorization URL
     auth_url = (
-        f"{settings.oidc_issuer_url}/protocol/openid-connect/auth"
-        f"?client_id={settings.oidc_client_id}"
-        f"&redirect_uri={settings.oidc_redirect_uri}"
+        f"{s.oidc_issuer_url}/protocol/openid-connect/auth"
+        f"?client_id={s.oidc_client_id}"
+        f"&redirect_uri={s.oidc_redirect_uri}"
         f"&response_type=code"
-        f"&scope={settings.oidc_scopes}"
+        f"&scope={s.oidc_scopes}"
         f"&state={state}"
         f"&nonce={nonce}"
     )
@@ -180,7 +155,8 @@ async def oidc_callback(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Handle OIDC callback."""
-    if not settings.oidc_enabled:
+    s = get_settings()
+    if not s.oidc_enabled:
         raise HTTPException(status_code=400, detail="OIDC not enabled")
     
     # Verify state
@@ -217,7 +193,7 @@ async def oidc_callback(
         httponly=True,
         secure=False,
         samesite="lax",
-        max_age=settings.access_token_expire_minutes * 60,
+        max_age=s.access_token_expire_minutes * 60,
     )
     return response
 
@@ -225,5 +201,6 @@ async def oidc_callback(
 @router.get("/oidc/logout")
 async def oidc_logout(request: Request) -> dict:
     """OIDC logout."""
+    s = get_settings()
     request.session.clear()
-    return {"logout_url": f"{settings.oidc_issuer_url}/protocol/openid-connect/logout"}
+    return {"logout_url": f"{s.oidc_issuer_url}/protocol/openid-connect/logout"}

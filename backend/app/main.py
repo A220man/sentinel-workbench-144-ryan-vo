@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-def create_app() -> FastAPI:
+def create_app(lifespan=None) -> FastAPI:
     """Create FastAPI application."""
     app = FastAPI(
         title=settings.app_name,
@@ -57,7 +57,18 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+@asynccontextmanager
+async def default_lifespan(app: FastAPI):
+    """Default application lifespan."""
+    await init_db()
+    yield
+    await close_db()
+
+
+app = create_app(default_lifespan)
+
+
+app = create_app(default_lifespan)
 
 
 if __name__ == "__main__":
