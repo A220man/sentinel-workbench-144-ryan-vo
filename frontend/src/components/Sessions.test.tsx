@@ -30,7 +30,7 @@ describe('Sessions', () => {
       </BrowserRouter>
     )
     await waitFor(() => {
-      expect(screen.getByText('No sessions yet')).toBeInTheDocument()
+      expect(screen.getByText('No sessions yet. Create one to get started.')).toBeInTheDocument()
     })
   })
 
