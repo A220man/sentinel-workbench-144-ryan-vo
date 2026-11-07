@@ -21,7 +21,7 @@ describe('Dashboard', () => {
         <Dashboard />
       </BrowserRouter>
     )
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('⟳')).toBeInTheDocument()
   })
 
   it('renders dashboard with stats', async () => {
