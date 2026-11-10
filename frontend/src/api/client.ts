@@ -78,4 +78,12 @@ export const attentionApi = {
   summary: () => api.get('/attention/stats/summary'),
 }
 
+export const privacyApi = {
+  getSettings: () => api.get('/privacy'),
+  updateSettings: (data: { enabled?: boolean; mask_char?: string; rules?: string[]; allow_hosts?: string[] }) =>
+    api.patch('/privacy', data),
+  maskText: (text: string) => api.post('/privacy/mask', { text }),
+  getStatus: () => api.get('/privacy/status'),
+}
+
 export default api

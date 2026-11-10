@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "core-skeleton",
+  "current_feature": "privacy-mode",
   "features": [
     {
       "id": "core-skeleton",
@@ -78,13 +78,18 @@
     {
       "id": "privacy-mode",
       "title": "Privacy mode for masking sensitive text",
-      "status": "planned",
+      "status": "in_progress",
       "acceptance": [
         "Toggle masks secrets in UI",
         "Configurable regex rules",
         "Dock indicator shows privacy status"
       ],
-      "implementation": [],
+      "implementation": [
+        "backend/app/api/routes/privacy.py",
+        "backend/app/services/privacy.py",
+        "frontend/src/components/Settings.tsx",
+        "frontend/src/api/client.ts"
+      ],
       "tests": []
     },
     {

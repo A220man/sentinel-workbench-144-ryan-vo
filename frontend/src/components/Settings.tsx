@@ -1,8 +1,54 @@
 import { useAuthStore } from '../hooks/useAuthStore'
-import { Shield, User, Key, Bell, Eye, EyeOff } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { privacyApi } from '../api/client'
+import { Shield, User, Key, Bell, Eye, EyeOff, Loader2, Save } from 'lucide-react'
 
 export default function Settings() {
   const { user } = useAuthStore()
+  const [privacyEnabled, setPrivacyEnabled] = useState(false)
+  const [privacyMaskChar, setPrivacyMaskChar] = useState('█')
+  const [privacyRules, setPrivacyRules] = useState<string[]>([])
+  const [privacyAllowHosts, setPrivacyAllowHosts] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load privacy settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await privacyApi.getSettings()
+        const data = response.data
+        setPrivacyEnabled(data.enabled)
+        setPrivacyMaskChar(data.mask_char)
+        setPrivacyRules(data.rules)
+        setPrivacyAllowHosts(data.allow_hosts)
+      } catch (err) {
+        console.error('Failed to load privacy settings:', err)
+        setError('Failed to load privacy settings')
+      }
+    }
+    loadSettings()
+  }, [])
+
+  const handlePrivacyToggle = async (enabled: boolean) => {
+    setSaving(true)
+    setError(null)
+    setSaved(false)
+    try {
+      await privacyApi.updateSettings({ enabled })
+      setPrivacyEnabled(enabled)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      console.error('Failed to update privacy settings:', err)
+      setError('Failed to update privacy settings')
+      // Revert toggle on error
+      setPrivacyEnabled(!enabled)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div style={{ maxWidth: 800 }}>
@@ -112,16 +158,30 @@ export default function Settings() {
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-            <input type="checkbox" />
+            <input
+              type="checkbox"
+              checked={privacyEnabled}
+              onChange={(e) => handlePrivacyToggle(e.target.checked)}
+              disabled={saving}
+            />
             <span>Enable privacy mode (mask sensitive text in panes)</span>
+            {saving && <Loader2 size={16} style={{ color: 'var(--fg-muted)' }} />}
+            {saved && <Save size={16} style={{ color: 'var(--success)' }} />}
           </label>
+          {error && (
+            <p style={{ fontSize: 13, color: 'var(--error)', marginLeft: 28 }}>{error}</p>
+          )}
           <p style={{ fontSize: 14, color: 'var(--fg-secondary)', marginLeft: 28 }}>
-            When enabled, secrets, emails, phone numbers, credit cards, IBANs, and IPs are masked with ████ in the UI.
+            When enabled, secrets, emails, phone numbers, credit cards, IBANs, and IPs are masked with{' '}
+            <code style={{ background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 4 }}>
+              {privacyMaskChar.repeat(4)}
+            </code>
+            {' '}in the UI.
             Configure custom patterns in backend config.
           </p>
           <div style={{ marginLeft: 28, padding: '12px', background: 'var(--bg-tertiary)', borderRadius: 6, fontFamily: 'monospace', fontSize: 13 }}>
-            <div>Built-in rules: secret, email, phone, card, iban, ip</div>
-            <div>Allow hosts: github.com, learn.microsoft.com</div>
+            <div>Built-in rules: {privacyRules.join(', ') || '—'}</div>
+            <div>Allow hosts: {privacyAllowHosts.join(', ') || '—'}</div>
           </div>
         </div>
       </div>

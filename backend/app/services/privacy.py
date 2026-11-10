@@ -51,6 +51,13 @@ class PrivacyService:
             if rule in builtin_patterns:
                 self._compiled_patterns[rule] = builtin_patterns[rule]
     
+    def reload_settings(self) -> None:
+        """Reload settings and recompile patterns."""
+        self.settings = get_settings()
+        self._compiled_patterns = {}
+        self._compile_patterns()
+        self._cached_mask_line.cache_clear()
+    
     def is_enabled(self) -> bool:
         """Check if privacy mode is enabled."""
         return self.settings.privacy_enabled

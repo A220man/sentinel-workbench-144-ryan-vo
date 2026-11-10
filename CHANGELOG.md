@@ -1,6 +1,19 @@
 # Changelog
 
+## 1.4.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.3.0 — work-in-progress checkpoint
+
+### Added
+- Privacy mode API endpoints (`/api/privacy`, `/api/privacy/mask`, `/api/privacy/status`)
+- Privacy settings UI in Settings page with functional toggle
+- `PrivacyService.reload_settings()` for runtime pattern recompilation
+
+### Changed
+- Updated `current_feature` to `privacy-mode` in feature-plan.json
+- Extended `PrivacyService` with `reload_settings()` method
 
 Partial code published for continued development. Known issues: STATUS.md.
 
