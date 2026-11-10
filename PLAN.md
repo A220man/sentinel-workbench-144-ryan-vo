@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-core-skeleton
+privacy-mode
 
 ## Roadmap
 
@@ -43,12 +43,14 @@ Acceptance:
 
 ### privacy-mode — Privacy mode for masking sensitive text
 
-Status: planned
+Status: in_progress
 
 Acceptance:
 - Toggle masks secrets in UI
 - Configurable regex rules
 - Dock indicator shows privacy status
+
+Implementation: `backend/app/api/routes/privacy.py`, `backend/app/services/privacy.py`, `frontend/src/components/Settings.tsx`, `frontend/src/api/client.ts`
 
 ### spaces — Spaces for grouping sessions
 

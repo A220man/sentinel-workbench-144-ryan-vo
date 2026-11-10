@@ -7,7 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import get_settings
 from app.core.database import init_db, close_db
-from app.api.routes import health, sessions, windows, attention, auth
+from app.api.routes import health, sessions, windows, attention, auth, privacy
 
 settings = get_settings()
 
@@ -53,6 +53,7 @@ def create_app(lifespan=None) -> FastAPI:
     app.include_router(windows.router, prefix="/api")
     app.include_router(attention.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
+    app.include_router(privacy.router, prefix="/api")
     
     return app
 
