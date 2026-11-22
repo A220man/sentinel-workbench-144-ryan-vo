@@ -4,6 +4,31 @@ import type { AttentionItem, AttentionKind } from '../types/api'
 import { X, CheckCircle, HelpCircle, AlertTriangle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
+const MASK_CHAR = '█'
+
+function maskSecrets(text: string): string {
+  if (!text) return text
+  // Email pattern
+  let result = text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, MASK_CHAR.repeat(20))
+  // Phone pattern
+  result = result.replace(/(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g, MASK_CHAR.repeat(20))
+  // Card pattern (13-16 digits)
+  result = result.replace(/(?:\d[ -]*?){13,16}/g, MASK_CHAR.repeat(20))
+  // IP pattern
+  result = result.replace(
+    /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g,
+    MASK_CHAR.repeat(20)
+  )
+  // IBAN pattern (simplified)
+  result = result.replace(/[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}/g, MASK_CHAR.repeat(20))
+  // Secret/key patterns
+  result = result.replace(
+    /(?i)(api[_-]?key|secret[_-]?key|access[_-]?token|auth[_-]?token|bearer[_-]?token|password|passwd|pwd)["']?\s*[:=]\s*["']?[a-zA-Z0-9_\-]{10,}/g,
+    MASK_CHAR.repeat(20)
+  )
+  return result
+}
+
 export default function Inbox() {
   const [items, setItems] = useState<AttentionItem[]>([])
   const [total, setTotal] = useState(0)
@@ -15,6 +40,25 @@ export default function Inbox() {
   const [error, setError] = useState('')
   const [dismissing, setDismissing] = useState<Record<number, boolean>>({})
 
+  const [privacyEnabled, setPrivacyEnabled] = useState(false)
+  const [privacyMaskChar, setPrivacyMaskChar] = useState('█')
+
+  // Load privacy settings
+  useEffect(() => {
+    const loadPrivacySettings = async () => {
+      try {
+        const response = await attentionApi.getStatus ? 
+          await attentionApi.getStatus() : 
+          await fetch('/api/privacy/status').then(r => r.json())
+        setPrivacyEnabled(response.enabled ?? false)
+        setPrivacyMaskChar(response.mask_char ?? '█')
+      } catch (err) {
+        console.error('Failed to load privacy settings:', err)
+      }
+    }
+    loadPrivacySettings()
+  }, [])
+
   const fetchItems = async () => {
     setLoading(true)
     setError('')
@@ -25,7 +69,14 @@ export default function Inbox() {
         page,
         page_size: pageSize,
       })
-      setItems(res.data.items)
+      // Mask titles if privacy is enabled
+      const mask = privacyEnabled
+      const processedItems = res.data.items.map(item => ({
+        ...item,
+        title: mask ? maskSecrets(item.title) : item.title,
+        window_title: mask ? maskSecrets(item.window_title || '') : (item.window_title || ''),
+      }))
+      setItems(processedItems)
       setTotal(res.data.total)
     } catch {
       setError('Failed to load inbox')
@@ -36,7 +87,7 @@ export default function Inbox() {
 
   useEffect(() => {
     fetchItems()
-  }, [page, kindFilter, showDismissed])
+  }, [page, kindFilter, showDismissed, privacyEnabled])
 
   const handleDismiss = async (item: AttentionItem) => {
     const nonce = prompt('Enter human nonce to dismiss:')
@@ -135,11 +186,11 @@ export default function Inbox() {
                       <td style={{ color: 'var(--fg-secondary)' }}>{(page - 1) * pageSize + idx + 1}</td>
                       <td>{getKindBadge(item.kind)}</td>
                       <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.title}
+                        {privacyEnabled ? maskSecrets(item.title) : item.title}
                       </td>
                       <td>{item.session_name}</td>
                       <td style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.window_title || <span style={{ color: 'var(--fg-muted)' }}>—</span>}
+                        {privacyEnabled ? maskSecrets(item.window_title || '') : (item.window_title || '')}
                       </td>
                       <td style={{ color: 'var(--fg-secondary)', fontSize: 13 }}>
                         {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
