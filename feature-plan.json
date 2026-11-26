@@ -78,19 +78,20 @@
     {
       "id": "privacy-mode",
       "title": "Privacy mode for masking sensitive text",
-      "status": "in_progress",
+      "status": "done",
       "acceptance": [
         "Toggle masks secrets in UI",
         "Configurable regex rules",
         "Dock indicator shows privacy status"
       ],
       "implementation": [
-        "backend/app/api/routes/privacy.py",
-        "backend/app/services/privacy.py",
-        "frontend/src/components/Settings.tsx",
-        "frontend/src/api/client.ts"
+        "backend/app/services/privacy.py - PrivacyService class",
+        "backend/app/api/routes/privacy.py - API routes",
+        "backend/tests/test_api.py - Privacy test class"
       ],
-      "tests": []
+      "tests": [
+        "backend/tests/test_api.py::TestPrivacyService - 8 test cases"
+      ]
     },
     {
       "id": "spaces",
