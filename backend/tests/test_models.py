@@ -133,3 +133,21 @@ class TestAttentionItem:
         result = await db_session.execute(select(AttentionItem).where(AttentionItem.window_id == test_window.id))
         items = result.scalars().all()
         assert len(items) == len(AttentionKind)
+
+
+class TestAgentServiceErroredTransition:
+    @pytest.mark.asyncio
+    async def test_errored_transition_creates_attention_item(
+        self, db_session: AsyncSession, test_window: Window
+    ):
+        from app.services.agent import AgentService
+
+        service = AgentService(db_session)
+        await service.update_agent_state(test_window.id, AgentState.ERRORED)
+
+        result = await db_session.execute(
+            select(AttentionItem).where(AttentionItem.window_id == test_window.id)
+        )
+        items = result.scalars().all()
+        assert len(items) == 1
+        assert items[0].kind == AttentionKind.ERRORED
