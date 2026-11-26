@@ -1,8 +1,20 @@
 # Changelog
 
+## 1.7.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.6.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.6.1 — work-in-progress checkpoint
+
+### Added
+- 8 privacy mode test cases covering text masking, email, phone, card, IBAN, and IP pattern detection
+- GET /api/privacy/status endpoint for dock indicator
+- Configurable regex rules: secret, email, phone, card, iban, ip
+- Allow-listed host exemption for masking privacy
 
 ## 1.5.0 — work-in-progress checkpoint
 

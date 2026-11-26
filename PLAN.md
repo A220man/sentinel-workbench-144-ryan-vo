@@ -43,14 +43,16 @@ Acceptance:
 
 ### privacy-mode — Privacy mode for masking sensitive text
 
-Status: in_progress
+Status: done
 
 Acceptance:
 - Toggle masks secrets in UI
 - Configurable regex rules
 - Dock indicator shows privacy status
 
-Implementation: `backend/app/api/routes/privacy.py`, `backend/app/services/privacy.py`, `frontend/src/components/Settings.tsx`, `frontend/src/api/client.ts`
+Implementation: `backend/app/services/privacy.py - PrivacyService class`, `backend/app/api/routes/privacy.py - API routes`, `backend/tests/test_api.py - Privacy test class`
+
+Tests: `backend/tests/test_api.py::TestPrivacyService - 8 test cases`
 
 ### spaces — Spaces for grouping sessions
 

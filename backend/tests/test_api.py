@@ -1,6 +1,8 @@
 """Tests for API routes."""
 import pytest
 from httpx import AsyncClient
+import os
+os.environ["PRIVACY_ENABLED"] = "true"
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -296,3 +298,119 @@ class TestAttentionEndpoints:
             json={"human_nonce": "wrong-nonce"}
         )
         assert response.status_code == 403
+
+
+class TestPrivacyService:
+    """Tests for the privacy mode text masking service."""
+
+    @pytest.mark.asyncio
+    async def test_privacy_status_endpoint(self, client: AsyncClient):
+        """GET /api/privacy/status returns privacy mode status."""
+        login_resp = await client.post("/api/auth/login", json={"email": "test@example.com", "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.get("/api/privacy/status", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "enabled" in data
+        assert "mask_char" in data
+
+    @pytest.mark.asyncio
+    async def test_privacy_settings_endpoint(self, client: AsyncClient, test_user: User):
+        """GET /api/privacy returns current privacy settings."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.get("/api/privacy", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        data = response.json()
+        assert "enabled" in data
+        assert "mask_char" in data
+        assert "rules" in data
+        assert "allow_hosts" in data
+
+    @pytest.mark.asyncio
+    async def test_privacy_mask_text_endpoint(self, client: AsyncClient, test_user: User):
+        """POST /api/privacy/mask masks sensitive text."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.post(
+            "/api/privacy/mask",
+            json={"text": "my api_key is ABCDEF1234567890abcdef1234567890"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "masked_text" in data
+        assert "matches_count" in data
+        assert data["masked_text"] != "my api_key is ABCDEF1234567890abcdef1234567890"
+        assert data["matches_count"] >= 1
+
+    @pytest.mark.asyncio
+    async def test_privacy_mask_text_no_secrets(self, client: AsyncClient, test_user: User):
+        """POST /api/privacy/mask with no sensitive text returns original text."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.post(
+            "/api/privacy/mask",
+            json={"text": "this is just normal text with no secrets"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["masked_text"] == "this is just normal text with no secrets"
+        assert data["matches_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_privacy_mask_with_email(self, client: AsyncClient, test_user: User):
+        """POST /api/privacy/mask masks email addresses."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.post(
+            "/api/privacy/mask",
+            json={"text": "Contact us at user@example.com for support"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["matches_count"] >= 1
+
+    @pytest.mark.asyncio
+    async def test_privacy_mask_with_phone(self, client: AsyncClient, test_user: User):
+        """POST /api/privacy/mask masks phone numbers."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.post(
+            "/api/privacy/mask",
+            json={"text": "Call +1-555-123-4567 for assistance"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["matches_count"] >= 1
+
+    @pytest.mark.asyncio
+    async def test_privacy_mask_with_credit_card(self, client: AsyncClient, test_user: User):
+        """POST /api/privacy/mask masks credit card numbers."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.post(
+            "/api/privacy/mask",
+            json={"text": "Card number 4242424242424242"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["matches_count"] >= 1
+
+    @pytest.mark.asyncio
+    async def test_privacy_mask_with_ip(self, client: AsyncClient, test_user: User):
+        """POST /api/privacy/mask masks IP addresses."""
+        login_resp = await client.post("/api/auth/login", json={"email": test_user.email, "password": "password"})
+        token = login_resp.json()["access_token"]
+        response = await client.post(
+            "/api/privacy/mask",
+            json={"text": "Server at 192.168.1.1 is down"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["matches_count"] >= 1
