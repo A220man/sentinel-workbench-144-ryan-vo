@@ -84,7 +84,7 @@ class AgentService:
         elif to_state == AgentState.ERRORED:
             item = AttentionItem(
                 window_id=window.id,
-                kind=AttentionKind.ERRORed,
+                kind=AttentionKind.ERRORED,
                 title=f"Pane {window.index + 1} errored",
                 human_nonce=self._generate_nonce(),
             )
